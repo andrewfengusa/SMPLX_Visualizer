@@ -7,6 +7,7 @@ import cv2
 from human_body_prior.mesh import MeshViewer
 from human_body_prior.tools.omni_tools import copy2cpu as c2c, colors
 import trimesh
+import datetime
 
 from utils.rotation2xyz import SMPLXRotation2xyz
 
@@ -29,6 +30,7 @@ def prepare_mesh_viewer(img_shape, camera_pos=[0, 0, 3.75], yfov = np.pi / 3.0):
     #mv._add_raymond_light()
     return mv
 
+
 class SMPLXVideoRenderer:
     def __init__(self, model_path, model_type='SMPLX', view_type='full-body', device = 'cpu'):
         self.device = device #torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -46,9 +48,7 @@ class SMPLXVideoRenderer:
             self.image_shape = (1600, 1000)
         self.mv = prepare_mesh_viewer(self.image_shape, camera_pos = camera_pos, yfov=yfov)
 
-
     def save_pose_to_video(self, poses, out_video_file, left_hand_pose = None, right_hand_pose = None, fps = 30, glob_rot=[0.0, 0.0, 0.0]):
-
         # assume it's a pytorch tensor of (N, J, 3, 3), we could handle the conversion here for list or numpy array
         # N = Num frames, J = Num joints, R = 3x3 rotation matrices
         all_recon_meshes = self.pose_to_vertices(
@@ -72,20 +72,28 @@ class SMPLXVideoRenderer:
             out_videos.write(img)
         out_videos.release()
 
+
 def to_tensors(poses, device):
     pose_t = torch.from_numpy(poses)
     final_poses = torch.unsqueeze(pose_t, dim = 0).to(device)
     return final_poses
 
+
 def test_smplx_renderer():
     smplx_path = r'smplx_model/SMPLX_MALE.npz'
     gesture_data_path = r'data/2ZviHInGBJQ.pkl'
-    out_dir = r'./'
+    out_dir = r'./output'
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     smplx_renderer = SMPLXVideoRenderer(smplx_path, view_type='upper-body')
     motion_data = pickle.load(open(gesture_data_path, 'rb'))
     for segment_idx, gesture_segment in enumerate(motion_data):
+        # print segment information
+        start_time_str = str(datetime.timedelta(seconds=gesture_segment["start_time"]))
+        end_time_str = str(datetime.timedelta(seconds=gesture_segment["end_time"]))
+        print(f'segment {segment_idx}: {start_time_str}--{end_time_str}')
+        print(' '.join([w[0] for w in gesture_segment['words']]))
+
         # run inference at each motion separately
         pose_params = gesture_segment['pose_params']
         body_poses = to_tensors(pose_params['body_pose'], smplx_renderer.device)
@@ -99,37 +107,4 @@ def test_smplx_renderer():
 
 if __name__ == "__main__":
     test_smplx_renderer()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

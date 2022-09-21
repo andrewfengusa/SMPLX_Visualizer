@@ -7,7 +7,8 @@ from utils.rotation_conversions import axis_angle_to_matrix
 
 JOINTSTYPE_ROOT = {
     "smpl": 0,
-    "vibe": 8}  # 0 is the 8 position: OP MidHip below
+    "vibe": 8,  # 0 is the 8 position: OP MidHip below
+    "all_joints": 0}
 
 JOINT_MAP = {
     'OP Nose': 24,
@@ -130,7 +131,7 @@ class SMPL(_SMPLLayer):
             output[joinstype] = all_joints[:, indexes]
         return output
 
-JOINTSTYPES = ["smpl", "vibe", "vertices"]
+JOINTSTYPES = ["smpl", "vibe", "vertices", "all_joints"]
 class SMPLXRotation2xyz:
     def __init__(self, device, model_path):
         self.device = device
